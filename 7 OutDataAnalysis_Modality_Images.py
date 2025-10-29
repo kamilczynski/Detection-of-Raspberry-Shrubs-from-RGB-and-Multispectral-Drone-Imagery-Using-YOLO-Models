@@ -22,8 +22,8 @@ mpl.rcParams.update({
 })
 
 # === PATHS ===
-input_path = r"C:/Users/topgu/Desktop/Splotowe Sieci Neuronowe/ELASTYCZNOSC/cross_modality_results.csv"
-save_dir = r"C:/Users/topgu/Desktop/Splotowe Sieci Neuronowe/ELASTYCZNOSC/DANEWYNIKIMDPI3FINAL"
+input_path = r"C:/Users/"
+save_dir = r"C:/Users/"
 os.makedirs(save_dir, exist_ok=True)
 
 # === Load data ===
@@ -97,9 +97,9 @@ plt.figure(figsize=(8.0, 5.0))  # slightly wider and taller
 palette = sns.color_palette("viridis", 3)
 
 metric_labels = {
-    "EI": "Elasticity Index (EI)",
-    "SELF_MAP": r"$mAP_{train}$",
-    "CROSS_MEAN": r"$mAP_{cross}$"
+    "EI": r"Relative $mAP$ Retention",
+    "SELF_MAP": r"$mAP_{in}$",
+    "CROSS_MEAN": r"$mAP_{out}$"
 }
 
 melted = ei_df.melt(
@@ -152,8 +152,8 @@ plt.figure(figsize=(7.5, 5.0))
 palette = sns.color_palette("viridis", 2)
 
 metric_labels_wcr = {
-    "WCR": "Worst-case ratio (WCR)",
-    "STABILITY": r"$\sigma(mAP_{cross})$"
+    "WCR": "Worst-case ratio",
+    "STABILITY": r"Cross-Domain Variability"
 }
 
 melted_wcr = ei_df.melt(
@@ -225,8 +225,8 @@ plt.figure(figsize=(6.8, 4.8))
 palette = sns.color_palette("viridis", 2)
 
 metric_labels_wcr = {
-    "WCR": "Worst-case ratio (WCR)",
-    "STABILITY": r"$\sigma(mAP_{cross})$"
+    "WCR": "Worst-case ratio",
+    "STABILITY": r"Cross-Domain Variability"
 }
 
 melted_wcr = ei_df.melt(
