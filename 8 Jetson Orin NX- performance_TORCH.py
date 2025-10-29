@@ -2,8 +2,8 @@ from ultralytics import YOLO
 import torch, os, time, csv, sys, subprocess
 
 # === KONFIGURACJA ===
-model_path = "/media/kamil/ADATA SD620/runs/train_RGB8S/yolov8s_RGB8S/weights/best.pt"  # ścieżka do modelu
-save_dir = "/home/kamil/Desktop/WYNIKI/NIR/8S"  # katalog wyników
+model_path = "/"  # ścieżka do modelu
+save_dir = "/"  # katalog wyników
 os.makedirs(save_dir, exist_ok=True)
 
 # Wartość mAP@[.5:.95] z ewaluacji TEST SET
