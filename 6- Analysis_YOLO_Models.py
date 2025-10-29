@@ -22,8 +22,8 @@ mpl.rcParams.update({
 })
 
 # === CONFIGURATION ===
-xlsx_path = r""
-save_dir = r""
+xlsx_path = r"C:/Users/"
+save_dir = r"C:/Users/"
 os.makedirs(save_dir, exist_ok=True)
 
 # === 1️⃣ Load data ===
@@ -130,7 +130,7 @@ plt.figure(figsize=(6.8, 4.8))
 palette = sns.color_palette("viridis", 3)
 
 metric_labels = {
-    "EI": "Relative mAP Retention",
+    "EI": "Relative $mAP$ Retention",
     "SELF_MAP": r"$mAP_{in}$",
     "CROSS_MAP": r"$mAP_{out}$"
 }
