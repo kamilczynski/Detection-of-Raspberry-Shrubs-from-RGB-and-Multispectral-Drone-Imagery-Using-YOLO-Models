@@ -2,8 +2,8 @@ from ultralytics import YOLO
 import torch, os, time, csv, sys
 
 # === CONFIGURATION ===
-model_path = "C:/Users/HARDPC/runs/train_RGB8S/yolov8s_RGB8S/weights/best.pt"  # path to model
-save_dir = "C:/Users/HARDPC/Desktop/PROJECTS_CNN/RESULTS/ROWS/PERFORMANCE/RGB/8S"  # results directory
+model_path = "C:/Users/"  # path to model
+save_dir = "C:/Users/"  # results directory
 os.makedirs(save_dir, exist_ok=True)
 
 # mAP@[.5:.95] value from TEST SET evaluation
