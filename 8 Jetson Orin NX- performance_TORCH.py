@@ -1,97 +1,223 @@
+# -*- coding: utf-8 -*-
+"""
+YOLO Multi-Model Benchmark — Jetson Orin NX Edition (FP16, CUDA)
+-----------------------------------------------------------------
+- Identyczna metodologia jak RTX 5080 benchmark
+- Dostosowane parametry dla systemu wbudowanego
+- Chroni przed thermal throttlingiem
+- Wyniki zapisywane per sesję + plik zbiorczy
+"""
+
+import os
+import sys
+import time
+import datetime
+import statistics as st
+import pandas as pd
+import numpy as np
+import torch
 from ultralytics import YOLO
-import torch, os, time, csv, sys, subprocess
+import traceback
+from itertools import islice
 
-# === KONFIGURACJA ===
-model_path = "/"  # ścieżka do modelu
-save_dir = "/"  # katalog wyników
-os.makedirs(save_dir, exist_ok=True)
+# ===================== USER CONFIG (JETSON ORIN NX 16GB) =====================
+MODELS = [
+   MODELS = [
+    {"name": "YOLOv8s_RGB8S",   "path": "/home/kamil/Desktop/runsENGINE/train_RGB8S/yolov8s_RGB8S/weights/best.pt",  "map5095": 0.975},
+    {"name": "YOLOv11s_RGBG11S","path": "/home/kamil/Desktop/runsENGINE/train_RGB11S/yolov11s_RGB11S/weights/best.pt","map5095": 0.975},
+    {"name": "YOLOv12s_RGBG12S","path": "/home/kamil/Desktop/runsENGINE/train_RGB12S/yolov12s_RGB12S/weights/best.pt","map5095": 0.973},
+    {"name": "YOLOv8s_NIR8S",   "path": "/home/kamil/Desktop/runsENGINE/train_NIR8S/yolov8s_NIR8S/weights/best.pt",  "map5095": 0.984},
+    {"name": "YOLOv11s_NIR11S", "path": "/home/kamil/Desktop/runsENGINE/train_NIR11S/yolov11s_NIR11S/weights/best.pt","map5095": 0.986},
+    {"name": "YOLOv12s_NIR12S", "path": "/home/kamil/Desktop/runsENGINE/train_NIR12S/yolov12s_NIR12S/weights/best.pt","map5095": 0.986},
+    {"name": "YOLOv8s_RE8S",    "path": "/home/kamil/Desktop/runsENGINE/train_RE8S/yolov8s_RE8S/weights/best.pt",    "map5095": 0.985},
+    {"name": "YOLOv11s_RE11S",  "path": "/home/kamil/Desktop/runsENGINE/train_RE11S/yolov11s_RE11S/weights/best.pt", "map5095": 0.985},
+    {"name": "YOLOv12s_RE12S",  "path": "/home/kamil/Desktop/runsENGINE/train_RE12S/yolov12s_RE12S/weights/best.pt", "map5095": 0.983},
+    {"name": "YOLOv8s_R8S",     "path": "/home/kamil/Desktop/runsENGINE/train_R8S/yolov8s_R8S/weights/best.pt",      "map5095": 0.941},
+    {"name": "YOLOv11s_R11S",   "path": "/home/kamil/Desktop/runsENGINE/train_R11S/yolov11s_R11S/weights/best.pt",   "map5095": 0.949},
+    {"name": "YOLOv12s_R12S",   "path": "/home/kamil/Desktop/runsENGINE/train_R12S/yolov12s_R12S/weights/best.pt",   "map5095": 0.952},
+    {"name": "YOLOv8s_G8S",     "path": "/home/kamil/Desktop/runsENGINE/train_G8S/yolov8s_G8S/weights/best.pt",      "map5095": 0.973},
+    {"name": "YOLOv11s_G11S",   "path": "/home/kamil/Desktop/runsENGINE/train_G11S/yolov11s_G11S/weights/best.pt",   "map5095": 0.974},
+    {"name": "YOLOv12s_G12S",   "path": "/home/kamil/Desktop/runsENGINE/train_G12S/yolov12s_G12S/weights/best.pt",   "map5095": 0.972},
+]
 
-# Wartość mAP@[.5:.95] z ewaluacji TEST SET
-map5095_value = 0.672  # ← wpisz swój wynik z test set
 
-# Parametry testu
-warmup_iter = 10       # liczba iteracji rozgrzewających
-test_iter = 100        # liczba iteracji pomiarowych
-input_res = (640, 640)
-input_size = f"{input_res[0]}x{input_res[1]}"
+SAVE_DIR = "/home/jetson/benchmarks/yolo_perf/"
+INPUT_RES = (640, 640)
+WARMUP_IT = 20          # krótszy warmup – Jetson szybciej stabilizuje
+TIMED_IT = 60           # mniejsza liczba prób, unikamy throttlingu
+NUM_RUNS = 5
+FORCE_FP16 = True
+SESSION_COOLDOWN = 150  # 2,5 minuty przerwy między grupami
+STABILIZATION_TIME = 10 # 10s stabilizacja zegarów GPU
+TRIM_LOWER = 20         # obcięcie dolnych 20%
+TRIM_UPPER = 80         # obcięcie górnych 20%
+# ============================================================================
 
-# === GPU DETEKCJA ===
-if not torch.cuda.is_available():
-    sys.exit("\n❌ Brak dostępnego GPU (CUDA). Test wydajności można uruchomić tylko na RTX 5080 lub Jetson Orin NX.\n")
 
-device = "cuda"
-device_name = torch.cuda.get_device_name(0)
-print(f"\n⚙️ Wykryto urządzenie: {device_name}")
+def ensure_cuda_or_exit():
+    if not torch.cuda.is_available():
+        sys.exit("❌ No CUDA GPU detected.")
+    torch.cuda.init()
 
-# === ZAŁADUJ MODEL ===
-print(f"\n📦 Ładowanie modelu z: {model_path}")
-model = YOLO(model_path)
-model.to(device)
 
-# --- PARAMETRY MODELU ---
-params_m = sum(p.numel() for p in model.model.parameters()) / 1e6
-model_size_mb = os.path.getsize(model_path) / (1024 * 1024)
-print(f"\n📊 Parametry modelu: {params_m:.2f} M | Rozmiar: {model_size_mb:.2f} MB")
+def use_fp16_flag():
+    if not (FORCE_FP16 and torch.cuda.is_available()):
+        return False
+    major, _ = torch.cuda.get_device_capability(0)
+    return major >= 7
 
-# === WARM-UP GPU ===
-print("\n🔥 Rozgrzewanie GPU...")
-dummy = torch.zeros((1, 3, *input_res)).to(device)
-for _ in range(warmup_iter):
-    _ = model(dummy)
-torch.cuda.empty_cache()
-print("✅ Warm-up zakończony.\n")
 
-# === POMIAR CZASU INFERENCJI ===
-print("🚀 Pomiar wydajności (czysty forward pass)...")
-torch.cuda.synchronize()
-start = time.time()
-for _ in range(test_iter):
-    _ = model(dummy)
-torch.cuda.synchronize()
-end = time.time()
+def make_dummy(res, device="cuda"):
+    return torch.zeros((1, 3, res[0], res[1]), dtype=torch.float32, device=device)
 
-# === OBLICZENIA METRYK ===
-total_time = end - start
-fps = test_iter / total_time
-latency_ms = 1000 / fps
-ap_fps_ratio = map5095_value / fps if fps > 0 else 0.0
 
-# === WYNIKI ===
-print("\n=== WYNIKI WYDAJNOŚCIOWE ===")
-print(f"Model: {os.path.basename(model_path)}")
-print(f"Device: {device_name}")
-print(f"Input size: {input_size}")
-print(f"Params: {params_m:.2f} M")
-print(f"Model size: {model_size_mb:.2f} MB")
-print(f"FPS: {fps:.2f}")
-print(f"Latency: {latency_ms:.2f} ms")
-print(f"mAP@[.5:.95]/FPS: {ap_fps_ratio:.4f}")
+def stabilize_gpu(model, dummy, seconds=STABILIZATION_TIME):
+    print(f"⚙️ Stabilizacja GPU clocks ({seconds}s)...")
+    end = time.time() + seconds
+    with torch.inference_mode():
+        while time.time() < end:
+            _ = model(dummy, half=True, verbose=False)
+    torch.cuda.synchronize()
 
-# === ZAPIS DO CSV ===
-csv_path = os.path.join(save_dir, "hardware_performance.csv")
 
-precision_mode = "FP16" if torch.cuda.get_device_capability()[0] >= 7 else "FP32"
+def sanity_check_gpu():
+    props = torch.cuda.get_device_properties(0)
+    total = props.total_memory
+    used = torch.cuda.memory_allocated()
+    if used / total > 0.9:
+        print("⚠️ GPU memory almost full — clearing cache...")
+        torch.cuda.empty_cache()
+        torch.cuda.synchronize()
+        time.sleep(2)
 
-if "rtx" in device_name.lower():
-    platform_name = "RTX 5080"
-elif "orin" in device_name.lower() or "jetson" in device_name.lower():
-    platform_name = "reComputer J4012 (Jetson Orin NX)"
-else:
-    platform_name = device_name
 
-file_exists = os.path.exists(csv_path)
-with open(csv_path, "a", newline="") as f:
-    writer = csv.writer(f)
-    if not file_exists:
-        writer.writerow([
-            "Device", "Precision mode", "Input size", "Params (M)",
-            "Model size (MB)", "FPS", "Latency (ms)", "mAP@[.5:.95]/FPS"
-        ])
-    writer.writerow([
-        platform_name, precision_mode, input_size,
-        f"{params_m:.2f}", f"{model_size_mb:.2f}", f"{fps:.2f}",
-        f"{latency_ms:.2f}", f"{ap_fps_ratio:.4f}"
+def cuda_timed_forward(model, dummy, warmup, iters, half_infer):
+    fps_list = []
+    with torch.inference_mode():
+        for _ in range(warmup):
+            _ = model(dummy, half=half_infer, verbose=False)
+        torch.cuda.synchronize()
+
+        for _ in range(iters):
+            torch.cuda.synchronize()
+            start = torch.cuda.Event(enable_timing=True)
+            end = torch.cuda.Event(enable_timing=True)
+            start.record()
+            _ = model(dummy, half=half_infer, verbose=False)
+            end.record()
+            torch.cuda.synchronize()
+            total_ms = start.elapsed_time(end)
+            fps_list.append(1000.0 / total_ms)
+
+    fps_array = np.array(fps_list)
+    trimmed = fps_array[(fps_array > np.percentile(fps_array, TRIM_LOWER)) &
+                        (fps_array < np.percentile(fps_array, TRIM_UPPER))]
+    fps_mean = np.mean(trimmed)
+    latency_ms = 1000.0 / fps_mean
+    jitter = np.std(trimmed) / fps_mean * 100
+    return fps_mean, latency_ms, jitter
+
+
+def summarize(vals):
+    s = list(map(float, vals))
+    q1, q3 = pd.Series(s).quantile([0.25, 0.75])
+    return {
+        "mean": float(st.mean(s)),
+        "std": float(st.pstdev(s)) if len(s) > 1 else 0.0,
+        "median": float(st.median(s)),
+        "q1": float(q1), "q3": float(q3), "iqr": float(q3 - q1),
+        "min": float(min(s)), "max": float(max(s)),
+    }
+
+
+def benchmark_model(model_info, device, half_infer=True):
+    name = model_info["name"]
+    path = model_info["path"]
+    mapv = model_info["map5095"]
+    print(f"\n🚀 Benchmarking {name} ({os.path.basename(path)})")
+
+    sanity_check_gpu()
+    model = YOLO(path).to(device)
+    dummy = make_dummy(INPUT_RES, device)
+    stabilize_gpu(model, dummy)
+
+    params_m = sum(p.numel() for p in model.model.parameters()) / 1e6
+    size_mb = os.path.getsize(path) / (1024 * 1024)
+    runs = []
+
+    for i in range(1, NUM_RUNS + 1):
+        fps, lat, jitter = cuda_timed_forward(model, dummy, WARMUP_IT, TIMED_IT, half_infer)
+        ratio = mapv / fps if fps > 0 else float("nan")
+        runs.append({"run": i, "fps": fps, "latency_ms": lat, "jitter_percent": jitter, "map50_95_over_fps": ratio})
+        print(f"Run {i:02d}: FPS={fps:.2f} | Lat={lat:.2f}ms | Jitter={jitter:.2f}%")
+
+    df_runs = pd.DataFrame(runs)
+    df_runs.insert(0, "model", name)
+    df_summary = pd.DataFrame([
+        {"metric": "FPS", **summarize(df_runs["fps"])},
+        {"metric": "Latency (ms)", **summarize(df_runs["latency_ms"])},
+        {"metric": "Jitter (%)", **summarize(df_runs["jitter_percent"])},
     ])
+    df_summary.insert(0, "model", name)
+    return df_runs, df_summary
 
-print(f"\n✅ Wyniki zapisano do: {csv_path}")
-print("=== Test zakończony pomyślnie ===\n")
+
+def chunk_models(models, n):
+    it = iter(models)
+    while True:
+        chunk = list(islice(it, n))
+        if not chunk:
+            break
+        yield chunk
+
+
+def run_session(session_id, models, device, half_infer):
+    print(f"\n🧪 --- Sesja {session_id} --- ({len(models)} modeli) ---")
+    all_runs, all_summaries = [], []
+    for m in models:
+        try:
+            df_r, df_s = benchmark_model(m, device, half_infer)
+            all_runs.append(df_r)
+            all_summaries.append(df_s)
+        except Exception as e:
+            print(f"❗ Pominięto {m['name']}: {e}")
+            traceback.print_exc()
+
+    df_all_runs = pd.concat(all_runs, ignore_index=True)
+    df_all_summaries = pd.concat(all_summaries, ignore_index=True)
+    save_path = os.path.join(SAVE_DIR, f"session_{session_id}_{datetime.datetime.now():%Y%m%d_%H%M}.xlsx")
+    with pd.ExcelWriter(save_path, engine="openpyxl") as writer:
+        df_all_runs.to_excel(writer, sheet_name="runs", index=False)
+        df_all_summaries.to_excel(writer, sheet_name="summary", index=False)
+    print(f"✅ Zapisano sesję {session_id}: {save_path}")
+    return df_all_runs, df_all_summaries
+
+
+def main():
+    os.makedirs(SAVE_DIR, exist_ok=True)
+    ensure_cuda_or_exit()
+    device = "cuda"
+    half_infer = use_fp16_flag()
+
+    all_runs_global, all_summaries_global = [], []
+    session_id = 1
+
+    for models_chunk in chunk_models(MODELS, 3):
+        df_r, df_s = run_session(session_id, models_chunk, device, half_infer)
+        all_runs_global.append(df_r)
+        all_summaries_global.append(df_s)
+        print(f"🕒 Cooldown {SESSION_COOLDOWN}s przed kolejną sesją...")
+        time.sleep(SESSION_COOLDOWN)
+        session_id += 1
+
+    df_global_runs = pd.concat(all_runs_global, ignore_index=True)
+    df_global_summaries = pd.concat(all_summaries_global, ignore_index=True)
+    master_path = os.path.join(SAVE_DIR, f"benchmark_master_{datetime.datetime.now():%Y%m%d_%H%M}.xlsx")
+    with pd.ExcelWriter(master_path, engine="openpyxl") as writer:
+        df_global_runs.to_excel(writer, sheet_name="runs", index=False)
+        df_global_summaries.to_excel(writer, sheet_name="summary", index=False)
+    print(f"\n🏁 Wszystkie sesje zakończone. Zapisano plik zbiorczy: {master_path}")
+
+
+if __name__ == "__main__":
+    main()
