@@ -2,10 +2,10 @@
 """
 YOLO Multi-Model Benchmark — Jetson Orin NX Edition (FP16, CUDA)
 -----------------------------------------------------------------
-- Identyczna metodologia jak RTX 5080 benchmark
-- Dostosowane parametry dla systemu wbudowanego
-- Chroni przed thermal throttlingiem
-- Wyniki zapisywane per sesję + plik zbiorczy
+- Identical methodology as the RTX 5080 benchmark
+- Tuned parameters for embedded system performance
+- Prevents thermal throttling
+- Saves results per session + combined master file
 """
 
 import os
@@ -22,7 +22,6 @@ from itertools import islice
 
 # ===================== USER CONFIG (JETSON ORIN NX 16GB) =====================
 MODELS = [
-   MODELS = [
     {"name": "YOLOv8s_RGB8S",   "path": "/home/kamil/Desktop/runsENGINE/train_RGB8S/yolov8s_RGB8S/weights/best.pt",  "map5095": 0.975},
     {"name": "YOLOv11s_RGBG11S","path": "/home/kamil/Desktop/runsENGINE/train_RGB11S/yolov11s_RGB11S/weights/best.pt","map5095": 0.975},
     {"name": "YOLOv12s_RGBG12S","path": "/home/kamil/Desktop/runsENGINE/train_RGB12S/yolov12s_RGB12S/weights/best.pt","map5095": 0.973},
@@ -40,17 +39,16 @@ MODELS = [
     {"name": "YOLOv12s_G12S",   "path": "/home/kamil/Desktop/runsENGINE/train_G12S/yolov12s_G12S/weights/best.pt",   "map5095": 0.972},
 ]
 
-
-SAVE_DIR = "/home/jetson/benchmarks/yolo_perf/"
+SAVE_DIR = "/home/kamil/Desktop/benchmarks/yolo_perf/"
 INPUT_RES = (640, 640)
-WARMUP_IT = 20          # krótszy warmup – Jetson szybciej stabilizuje
-TIMED_IT = 60           # mniejsza liczba prób, unikamy throttlingu
+WARMUP_IT = 20          # shorter warm-up – Jetson stabilizes faster
+TIMED_IT = 60           # fewer iterations to avoid throttling
 NUM_RUNS = 5
 FORCE_FP16 = True
-SESSION_COOLDOWN = 150  # 2,5 minuty przerwy między grupami
-STABILIZATION_TIME = 10 # 10s stabilizacja zegarów GPU
-TRIM_LOWER = 20         # obcięcie dolnych 20%
-TRIM_UPPER = 80         # obcięcie górnych 20%
+SESSION_COOLDOWN = 150  # 2.5-minute cooldown between sessions
+STABILIZATION_TIME = 10 # 10s GPU clock stabilization
+TRIM_LOWER = 20         # trim lower 20%
+TRIM_UPPER = 80         # trim upper 20%
 # ============================================================================
 
 
@@ -72,7 +70,7 @@ def make_dummy(res, device="cuda"):
 
 
 def stabilize_gpu(model, dummy, seconds=STABILIZATION_TIME):
-    print(f"⚙️ Stabilizacja GPU clocks ({seconds}s)...")
+    print(f"⚙️ Stabilizing GPU clocks ({seconds}s)...")
     end = time.time() + seconds
     with torch.inference_mode():
         while time.time() < end:
@@ -163,6 +161,7 @@ def benchmark_model(model_info, device, half_infer=True):
 
 
 def chunk_models(models, n):
+    """Split the model list into groups of n."""
     it = iter(models)
     while True:
         chunk = list(islice(it, n))
@@ -172,7 +171,7 @@ def chunk_models(models, n):
 
 
 def run_session(session_id, models, device, half_infer):
-    print(f"\n🧪 --- Sesja {session_id} --- ({len(models)} modeli) ---")
+    print(f"\n🧪 --- Session {session_id} --- ({len(models)} models) ---")
     all_runs, all_summaries = [], []
     for m in models:
         try:
@@ -180,7 +179,7 @@ def run_session(session_id, models, device, half_infer):
             all_runs.append(df_r)
             all_summaries.append(df_s)
         except Exception as e:
-            print(f"❗ Pominięto {m['name']}: {e}")
+            print(f"❗ Skipped {m['name']}: {e}")
             traceback.print_exc()
 
     df_all_runs = pd.concat(all_runs, ignore_index=True)
@@ -189,7 +188,7 @@ def run_session(session_id, models, device, half_infer):
     with pd.ExcelWriter(save_path, engine="openpyxl") as writer:
         df_all_runs.to_excel(writer, sheet_name="runs", index=False)
         df_all_summaries.to_excel(writer, sheet_name="summary", index=False)
-    print(f"✅ Zapisano sesję {session_id}: {save_path}")
+    print(f"✅ Session {session_id} saved: {save_path}")
     return df_all_runs, df_all_summaries
 
 
@@ -206,7 +205,7 @@ def main():
         df_r, df_s = run_session(session_id, models_chunk, device, half_infer)
         all_runs_global.append(df_r)
         all_summaries_global.append(df_s)
-        print(f"🕒 Cooldown {SESSION_COOLDOWN}s przed kolejną sesją...")
+        print(f"🕒 Cooldown {SESSION_COOLDOWN}s before next session...")
         time.sleep(SESSION_COOLDOWN)
         session_id += 1
 
@@ -216,7 +215,7 @@ def main():
     with pd.ExcelWriter(master_path, engine="openpyxl") as writer:
         df_global_runs.to_excel(writer, sheet_name="runs", index=False)
         df_global_summaries.to_excel(writer, sheet_name="summary", index=False)
-    print(f"\n🏁 Wszystkie sesje zakończone. Zapisano plik zbiorczy: {master_path}")
+    print(f"\n🏁 All sessions completed. Master file saved: {master_path}")
 
 
 if __name__ == "__main__":
