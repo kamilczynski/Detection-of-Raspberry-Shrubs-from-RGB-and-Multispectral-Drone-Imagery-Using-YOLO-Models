@@ -18,8 +18,8 @@ import os
 import subprocess
 
 # === PATHS ===
-input_path = r"D:\PUBLIKACJA\WYNIKITORCH\TORCH.xlsx"
-output_path = r"D:\PUBLIKACJA\WYNIKITORCH\TORCH.docx"
+input_path = r"D:\.xlsx"
+output_path = r"D:\.docx"
 
 # === Load data ===
 df = pd.read_excel(input_path)
