@@ -22,8 +22,8 @@ mpl.rcParams.update({
 })
 
 # === CONFIGURATION ===
-xlsx_path = r"C:/Users/topgu/Desktop/Splotowe Sieci Neuronowe/ELASTYCZNOSC/cross_modality_results.xlsx"
-save_dir = r"C:/Users/topgu/Desktop/Splotowe Sieci Neuronowe/ELASTYCZNOSC/MODELEWYNIKIMDPI222222FINAL"
+xlsx_path = r"C:/Users/.xlsx"
+save_dir = r"C:/Users/"
 os.makedirs(save_dir, exist_ok=True)
 
 # === 1️⃣ Load data ===
