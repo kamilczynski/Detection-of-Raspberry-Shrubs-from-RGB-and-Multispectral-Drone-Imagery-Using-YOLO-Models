@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="cnnplant.webp" alt="CNN Plant Concept" width="800"/>
+</p>
+
 This repository contains all preprocessing, training, and evaluation scripts used in the study “Detection of Raspberry Shrubs from RGB and Multispectral Drone Imagery Using YOLO Models”.
 The project evaluates YOLOv8s, YOLO11s, and YOLO12s models for the detection of floricane raspberry bushes using RGB and multispectral imagery acquired with a DJI Mavic 3 Multispectral drone.
 
