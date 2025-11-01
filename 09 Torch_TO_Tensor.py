@@ -5,8 +5,8 @@ import os, time
 os.environ["TENSORRT_SAFE_MODE"] = "0"
 
 # === CONFIGURATION ===
-source_dir = "/home/kamil/Desktop/runsENGINE/train_R11S/yolov11s_R11S/weights/best.pt"
-export_dir = "/home/kamil/Desktop/RUNS/runstensor"
+source_dir = "/home/best.pt"
+export_dir = "/home/"
 os.makedirs(export_dir, exist_ok=True)
 
 # === COLLECT MODELS ===
