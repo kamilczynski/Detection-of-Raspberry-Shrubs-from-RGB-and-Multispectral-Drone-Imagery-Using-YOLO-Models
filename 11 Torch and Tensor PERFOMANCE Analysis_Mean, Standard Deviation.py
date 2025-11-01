@@ -4,8 +4,8 @@ import os
 
 # STATISTICS OF OBTAINED RESULTS — FINAL VERSION FOR GITHUB
 # === Paths ===
-input_path = r"D:\benchmarks\yolo_perf\benchmark_master_20251030_1257.xlsx"
-output_dir = r"D:\PUBLIKACJA\WYNIKITORCH"
+input_path = r"D:\.xlsx"
+output_dir = r"D:\"
 os.makedirs(output_dir, exist_ok=True)
 
 # === Load data ===
