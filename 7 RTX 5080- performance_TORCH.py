@@ -23,24 +23,11 @@ from itertools import islice
 
 # ===================== USER CONFIG =====================
 MODELS = [
-    {"name": "YOLOv8s_RGB8S", "path": r"C:\Users\HARDPC\runs\train_RGB8S\yolov8s_RGB8S\weights\best.pt", "map5095": 0.975},
-    {"name": "YOLOv11s_RGBG11S", "path": r"C:\Users\HARDPC\runs\train_RGB11S\yolov11s_RGB11S\weights\best.pt", "map5095": 0.975},
-    {"name": "YOLOv12s_RGBG12S", "path": r"C:\Users\HARDPC\runs\train_RGB12S\yolov12s_RGB12S\weights\best.pt", "map5095": 0.973},
-    {"name": "YOLOv8s_NIR8S", "path": r"C:\Users\HARDPC\runs\train_NIR8S\yolov8s_NIR8S\weights\best.pt", "map5095": 0.984},
-    {"name": "YOLOv11s_NIR11S", "path": r"C:\Users\HARDPC\runs\train_NIR11S\yolov11s_NIR11S\weights\best.pt", "map5095": 0.986},
-    {"name": "YOLOv12s_NIR12S", "path": r"C:\Users\HARDPC\runs\train_NIR12S\yolov12s_NIR12S\weights\best.pt", "map5095": 0.986},
-    {"name": "YOLOv8s_RE8S", "path": r"C:\Users\HARDPC\runs\train_RE8S\yolov8s_RE8S\weights\best.pt", "map5095": 0.985},
-    {"name": "YOLOv11s_RE11S", "path": r"C:\Users\HARDPC\runs\train_RE11S\yolov11s_RE11S\weights\best.pt", "map5095": 0.985},
-    {"name": "YOLOv12s_RE12S", "path": r"C:\Users\HARDPC\runs\train_RE12S\yolov12s_RE12S\weights\best.pt", "map5095": 0.983},
-    {"name": "YOLOv8s_R8S", "path": r"C:\Users\HARDPC\runs\train_R8S\yolov8s_R8S\weights\best.pt", "map5095": 0.941},
-    {"name": "YOLOv11s_R11S", "path": r"C:\Users\HARDPC\runs\train_R11S\yolov11s_R11S\weights\best.pt", "map5095": 0.949},
-    {"name": "YOLOv12s_R12S", "path": r"C:\Users\HARDPC\runs\train_R12S\yolov12s_R12S\weights\best.pt", "map5095": 0.952},
-    {"name": "YOLOv8s_G8S", "path": r"C:\Users\HARDPC\runs\train_G8S\yolov8s_G8S\weights\best.pt", "map5095": 0.973},
-    {"name": "YOLOv11s_G11S", "path": r"C:\Users\HARDPC\runs\train_G11S\yolov11s_G11S\weights\best.pt", "map5095": 0.974},
-    {"name": "YOLOv12s_G12S", "path": r"C:\Users\HARDPC\runs\train_G12S\yolov12s_G12S\weights\best.pt", "map5095": 0.972},
+    {"name": "YOLO", "path": r"C:\Users\best.pt", "map5095": 0.???},
+   
 ]
 
-SAVE_DIR = r"C:\Users\HARDPC\Desktop\PROJEKTY CNN\PERFOMANCERZEDY"
+SAVE_DIR = r"C:\Users\"
 INPUT_RES = (640, 640)
 WARMUP_IT = 50
 TIMED_IT = 200
