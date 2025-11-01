@@ -1,8 +1,4 @@
 <p align="center">
-  <img src="drone.png?raw=true" alt="Drone View" width="800"/>
-</p>
-
-<p align="center">
   <img src="drone.png" alt="Drone View " width="800"/>
 </p>
 
