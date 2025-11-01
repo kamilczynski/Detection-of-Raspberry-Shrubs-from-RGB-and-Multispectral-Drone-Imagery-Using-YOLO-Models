@@ -22,8 +22,8 @@ mpl.rcParams.update({
 })
 
 # === PATHS ===
-input_path = r"C:/Users/topgu/Desktop/Splotowe Sieci Neuronowe/ELASTYCZNOSC/cross_modality_results.csv"
-save_dir = r"C:/Users/topgu/Desktop/Splotowe Sieci Neuronowe/ELASTYCZNOSC/DANEWYNIKIMDPI3FINAL33"
+input_path = r"C:/Users/.csv"
+save_dir = r"C:/Users/"
 os.makedirs(save_dir, exist_ok=True)
 
 # === Load data ===
