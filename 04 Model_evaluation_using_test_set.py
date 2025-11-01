@@ -6,9 +6,9 @@ import yaml
 import json
 
 # === CONFIGURATION ===
-model_path = "C:/Users/HARDPC/runs/train_RGB8S/yolov8s_RGB8S/weights/best.pt"
-data_yaml = "C:/Users/HARDPC/data_RGB.yaml"
-save_dir = "C:/Users/HARDPC/Desktop/PROJECTS_CNN/RESULTS/ROWS/METRICS/RGB/8S"
+model_path = "C:/Users/"
+data_yaml = "C:/Users/"
+save_dir = "C:/Users/"
 
 # === CUDA DETECTION ===
 device = "cuda" if torch.cuda.is_available() else "cpu"
