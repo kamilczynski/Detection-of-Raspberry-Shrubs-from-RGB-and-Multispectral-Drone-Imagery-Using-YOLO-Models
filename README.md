@@ -15,12 +15,20 @@ This script provides a graphical interface for batch scaling of TIFF and standar
 It resizes images to user-defined dimensions using OpenCV and `tifffile`, while maintaining metadata integrity via ExifTool.  
 A minimalist GUI built with CustomTkinter enables quick and intuitive dataset preprocessing prior to YOLO model training.
 
+<p align="center">
+  <img src="imagescalling.png" alt="Image Scaling Process" width="800"/>
+</p>
+
 ### 📁 2-Organization_of_data_sets.py
 **Purpose:** Interactive multispectral dataset builder and splitter for YOLO training pipelines.
 This script provides a GUI-based tool for validating, organizing, and splitting multispectral image–label pairs into structured YOLO datasets.  
 It automatically scans subfolders for matching spectral channels (RGB, G, R, RE, NIR), verifies annotation consistency, detects duplicates or missing files, and partitions the data into *train/validation/test* sets by user-defined percentages.  
 Files are moved into a standardized YOLO directory tree (`/images` and `/labels` per spectral band), and a detailed CSV report is generated.  
 The interface offers real-time visual summaries and validation feedback, enabling reliable preprocessing for multispectral deep learning experiments.
+
+<p align="center">
+  <img src="dataorganizer.png" alt="Data Organizer Diagram" width="800"/>
+</p>
 
 ### 🧠 3-Training.py
 **Purpose:** Script for training YOLO-based object detection models on multispectral or RGB datasets.
